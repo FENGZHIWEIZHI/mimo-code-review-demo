@@ -5,40 +5,33 @@ from flask_cors import CORS
 import requests
 from dotenv import load_dotenv
 
-# 加载环境变量
+
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # 启用CORS支持
+CORS(app)
 
-# 模拟数据存储
 uploaded_files = {}
 analysis_results = {}
 
-# MiMo API配置
 MIMO_API_KEY = os.getenv('MIMO_API_KEY', 'your-api-key')
 MIMO_API_URL = os.getenv('MIMO_API_URL', 'https://api.xiaomimimo.com/v1')
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
-    """上传代码文件"""
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    
-    # 生成文件ID
+
     file_id = f"file_{len(uploaded_files) + 1}"
-    
-    # 读取文件内容
+
     file_content = file.read().decode('utf-8')
-    
-    # 检测文件语言（简化版）
+
     language = detect_language(file.filename, file_content)
-    
-    # 存储文件信息
+
     uploaded_files[file_id] = {
         'filename': file.filename,
         'content': file_content,
@@ -53,22 +46,18 @@ def upload_file():
 
 @app.route('/api/analyze/<file_id>', methods=['GET'])
 def analyze_code(file_id):
-    """分析代码文件"""
     if file_id not in uploaded_files:
         return jsonify({'error': 'File not found'}), 404
     
     file_info = uploaded_files[file_id]
-    
-    # 如果已经分析过，直接返回结果
+
     if file_id in analysis_results:
         return jsonify(analysis_results[file_id])
-    
-    # 调用MiMo API进行代码分析
+
     try:
         issues = analyze_with_mimo(file_info['content'], file_info['language'])
         summary = generate_code_summary(file_info['content'], file_info['language'])
-        
-        # 存储分析结果
+
         result = {
             'issues': issues,
             'summary': summary
@@ -81,7 +70,6 @@ def analyze_code(file_id):
 
 @app.route('/api/issues/<file_id>', methods=['GET'])
 def get_issues(file_id):
-    """获取文件的所有问题"""
     if file_id not in analysis_results:
         return jsonify({'error': 'Analysis not found'}), 404
     
@@ -91,8 +79,6 @@ def get_issues(file_id):
 
 @app.route('/api/suggestions/<issue_id>', methods=['GET'])
 def get_suggestions(issue_id):
-    """获取特定问题的建议"""
-    # 查找问题
     issue = None
     for file_id, result in analysis_results.items():
         for i in result['issues']:
@@ -104,8 +90,7 @@ def get_suggestions(issue_id):
     
     if not issue:
         return jsonify({'error': 'Issue not found'}), 404
-    
-    # 生成建议
+
     suggestions = generate_suggestions(issue)
     
     return jsonify({
@@ -114,7 +99,6 @@ def get_suggestions(issue_id):
 
 @app.route('/api/apply-suggestion', methods=['POST'])
 def apply_suggestion():
-    """应用建议到代码"""
     data = request.get_json()
     file_id = data.get('file_id')
     suggestion_id = data.get('suggestion_id')
@@ -124,8 +108,7 @@ def apply_suggestion():
     
     if file_id not in uploaded_files:
         return jsonify({'error': 'File not found'}), 404
-    
-    # 查找建议
+
     suggestion = None
     for result in analysis_results.values():
         for issue in result['issues']:
@@ -140,12 +123,10 @@ def apply_suggestion():
     
     if not suggestion:
         return jsonify({'error': 'Suggestion not found'}), 404
-    
-    # 应用建议（简化版）
+
     file_content = uploaded_files[file_id]['content']
     updated_code = apply_code_change(file_content, suggestion)
-    
-    # 更新文件内容
+
     uploaded_files[file_id]['content'] = updated_code
     
     return jsonify({
@@ -154,7 +135,6 @@ def apply_suggestion():
     })
 
 def detect_language(filename, content):
-    """检测代码语言"""
     extensions = {
         '.js': 'javascript',
         '.ts': 'typescript',
@@ -176,13 +156,11 @@ def detect_language(filename, content):
         '.yaml': 'yaml',
         '.yml': 'yaml'
     }
-    
-    # 从文件扩展名判断
+
     for ext, lang in extensions.items():
         if filename.endswith(ext):
             return lang
-    
-    # 简单的内容检测（备用）
+
     if 'import React' in content or 'from React' in content:
         return 'javascript'
     elif 'import ' in content and 'from ' in content:
@@ -193,11 +171,7 @@ def detect_language(filename, content):
     return 'text'
 
 def analyze_with_mimo(code, language):
-    """使用MiMo API分析代码"""
-    # 在实际应用中，这里会调用真实的MiMo API
-    # 这里使用模拟数据进行演示
-    
-    # 模拟不同语言的问题检测
+
     if language == 'python':
         return [
             {
@@ -269,9 +243,6 @@ def analyze_with_mimo(code, language):
         ]
 
 def generate_code_summary(code, language):
-    """生成代码摘要"""
-    # 在实际应用中，这里会调用真实的MiMo API
-    # 这里使用模拟数据进行演示
     
     if language == 'python':
         return "这是一个Python文件，包含基本的函数定义和控制流。代码结构清晰，但存在一些未使用的导入和潜在的性能问题。建议优化循环中的列表创建，并移除未使用的导入。"
@@ -281,8 +252,6 @@ def generate_code_summary(code, language):
         return f"这是一个{language}文件。代码结构基本合理，但建议添加更多的注释和文档字符串，以提高代码的可维护性。"
 
 def generate_suggestions(issue):
-    """生成问题的修复建议"""
-    # 模拟生成建议
     if issue['type'] == 'bug':
         return [
             {
@@ -329,23 +298,20 @@ def generate_suggestions(issue):
         ]
 
 def fix_bug(code, message):
-    """修复bug"""
     if '未使用的导入' in message:
-        return ''  # 删除未使用的导入
+        return ''
     elif '未声明的变量' in message:
         return 'let undeclaredVar = "";\nconsole.log(undeclaredVar);'
     else:
         return code
 
 def optimize_performance(code):
-    """优化性能"""
     if '循环中不必要的列表创建' in code:
         return 'new_list = []\nfor i in range(10):\n    new_list.append(i)'
     else:
         return code
 
 def improve_style(code):
-    """改进代码风格"""
     if 'var counter' in code:
         return code.replace('var', 'let')
     elif '建议添加文件头部注释' in code:
@@ -354,8 +320,6 @@ def improve_style(code):
         return code
 
 def apply_code_change(original_code, suggestion):
-    """应用代码更改"""
-    # 简化的代码替换逻辑
     return original_code.replace(suggestion['original_code'], suggestion['suggested_code'])
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ analysis_results = {}
 
 # MiMo API配置
 MIMO_API_KEY = os.getenv('MIMO_API_KEY', 'your-api-key')
-MIMO_API_URL = os.getenv('MIMO_API_URL', 'https://api.xiaomimimo.com/v1/chat/completions')
+MIMO_API_URL = os.getenv('MIMO_API_URL', 'https://api.xiaomimimo.com/v1')
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
